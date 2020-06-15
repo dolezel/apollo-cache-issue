@@ -1,7 +1,8 @@
 const { ApolloServer, gql } = require("apollo-server");
+const responseCachePlugin = require("apollo-server-plugin-response-cache");
 
 const typeDefs = gql`
-  type Book { #@cacheControl(maxAge: 100)
+  type Book {
     title: String
     author: String
   }
@@ -11,30 +12,33 @@ const typeDefs = gql`
   }
 `;
 
-const books = [
-  {
-    title: "Harry Potter and the Chamber of Secrets",
-    author: "J.K. Rowling",
-  },
-  {
-    title: "Jurassic Park",
-    author: "Michael Crichton",
-  },
-];
-
 const resolvers = {
   Query: {
-    books: () => books,
+    books: (a, b, c, info) => {
+      info.cacheControl.setCacheHint({ maxAge: 5 })
+      console.log('cache miss')
+      return [
+        {
+          title: "Harry Potter and the Chamber of Secrets" + Math.random(),
+          author: "J.K. Rowling",
+        },
+        {
+          title: "Jurassic Park" + Math.random(),
+          author: "Michael Crichton",
+        },
+      ]
+    },
   },
 };
 
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-  cacheControl: {
-    defaultMaxAge: 1000,
-  },
+  // cacheControl: {
+  //   defaultMaxAge: 5,
+  // },
   // cacheControl: true,
+  plugins: [responseCachePlugin],
 });
 
 // The `listen` method launches a web server.
